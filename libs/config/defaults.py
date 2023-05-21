@@ -462,7 +462,10 @@ _C.NUM_SHARDS = 1
 _C.SHARD_ID = 0
 
 # Output basedir.
-_C.OUTPUT_DIR = "/home/mohsen/farnoush/ATS-ViT/output"
+# _C.OUTPUT_DIR = "/home/mohsen/farnoush/ATS-ViT/output"
+# modified on 2023.04.17
+_C.OUTPUT_DIR = "/data/ML_document/ATS/output"
+
 
 # Note that non-determinism may still be present due to non-deterministic
 # operator implementations in GPU operator libraries.

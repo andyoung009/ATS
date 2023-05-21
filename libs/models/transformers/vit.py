@@ -20,6 +20,11 @@ from .transformer_block import Block
 from functools import wraps
 from ..build import MODEL_REGISTRY
 
+# `_logger = logging.getLogger(__name__)` 这行代码是 Python 代码中使用 logging 模块创建一个记录器对象。记录器对象用于在当前模块中记录输出日志信息，有助于调试和故障排除。
+# `getLogger()` 方法是 logging 模块中的一个工厂方法，返回一个指定名称的记录器实例。在这种情况下，使用 `__name__` 属性指定记录器的名称，即当前模块的名称。
+# 通过使用模块名称作为记录器名称，可以更细粒度地控制日志输出，并更容易地识别日志消息的来源。
+# 创建记录器对象后，可以使用适当的 logging 方法（例如 `_logger.debug()`、`_logger.info()` 等）以不同的严重级别（debug、info、warning、error 或 critical）发出日志消息。
+# 还可以使用不同的处理程序和格式化程序配置记录器对象，以控制日志消息的格式和输出位置。
 _logger = logging.getLogger(__name__)
 
 
@@ -415,31 +420,40 @@ def resize_pos_embed(posemb, posemb_new):
     gs_new = int(math.sqrt(ntok_new))
     _logger.info("Position embedding grid-size from %s to %s", gs_old, gs_new)
     posemb_grid = posemb_grid.reshape(1, gs_old, gs_old, -1).permute(0, 3, 1, 2)
+    # 使用双线性插值方法将重塑后的四维张量缩放到目标大小，并重新调整维度顺序
     posemb_grid = F.interpolate(posemb_grid, size=(gs_new, gs_new), mode="bilinear")
     posemb_grid = posemb_grid.permute(0, 2, 3, 1).reshape(1, gs_new * gs_new, -1)
     posemb = torch.cat([posemb_tok, posemb_grid], dim=1)
     return posemb
 
-
+# 过滤检查点中的模型参数，以适应当前模型的结构。主要用于加载已训练好的模型参数时，将模型参数转换为当前模型所需的格式和大小，以便于在加载预训练模型或迁移学习时使用。
+# 该函数的输入参数包括从检查点中加载的模型参数 `state_dict` 和当前模型 `model`。
 def checkpoint_filter_fn(state_dict, model):
     """convert patch embedding weight from manual patchify + linear proj to conv"""
     out_dict = {}
+    # 如果 `state_dict` 中包含 "model" 键，则提取其对应的值，即模型参数字典。
     if "model" in state_dict:
         # For deit models
         state_dict = state_dict["model"]
+    # 遍历模型参数字典
     for k, v in state_dict.items():
+        # 对于包含 "patch_embed.proj.weight" 键且维度小于 4 的张量，将其转换为卷积形式的张量。具体地，将其重塑为 4D 张量，并将其第二个维度拆分为两个维度。
+        # 这是因为旧版本的模型使用手动的 patchify + linear proj 方法来生成 patch embeddings，而新版本的模型使用卷积方法生成 patch embeddings。
         if "patch_embed.proj.weight" in k and len(v.shape) < 4:
             # For old models that I trained prior to conv based patchification
             O, I, H, W = model.patch_embed.proj.weight.shape
             v = v.reshape(O, -1, H, W)
+        # 若键为 "pos_embed" 且值的形状不匹配当前模型的位置嵌入张量，则调用 `resize_pos_embed()` 函数，调整位置嵌入张量的大小以适应当前模型的大小。
         elif k == "pos_embed" and v.shape != model.pos_embed.shape:
             # To resize pos embedding when using model at different size from pretrained weights
             v = resize_pos_embed(v, model.pos_embed)
         out_dict[k] = v
+    # 将转换后的模型参数字典返回。
     return out_dict
 
 
 def _create_vision_transformer(variant, pretrained=False, **kwargs):
+    # 首先通过传入的 variant 获取该 Vision Transformer 模型的默认配置文件，包括默认的类别数、输入图像大小等信息。
     default_cfg = default_cfgs[variant]
     default_num_classes = default_cfg["num_classes"]
     default_img_size = default_cfg["input_size"][-1]
@@ -447,12 +461,15 @@ def _create_vision_transformer(variant, pretrained=False, **kwargs):
     num_classes = kwargs.pop("num_classes", default_num_classes)
     img_size = kwargs.pop("img_size", default_img_size)
     repr_size = kwargs.pop("representation_size", None)
+    # 如果同时指定了 representation_size 和 num_classes，则会移除 MLP 层以适应 fine-tuning。如果仅指定了 representation_size，则使用该参数设置 MLP 层大小。
     if repr_size is not None and num_classes != default_num_classes:
         # Remove representation layer if fine-tuning. This may not always be the desired action,
         # but I feel better than doing nothing by default for fine-tuning. Perhaps a better interface?
         _logger.warning("Removing representation layer for fine-tuning.")
         repr_size = None
 
+    # 接着，该函数会使用 build_model_with_cfg 函数构建 VisionTransformer 模型。
+    # 该函数会根据传入的参数构建模型，并根据预训练选项和预训练过滤器函数（pretrained_filter_fn）从预训练模型中加载权重。
     model = build_model_with_cfg(
         VisionTransformer,
         variant,

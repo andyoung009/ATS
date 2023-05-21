@@ -266,7 +266,15 @@ def eval_epoch(
 
     val_meter.reset()
 
-
+# 这是一个Python函数，用于通过计算精确的统计信息更新模型中的批归一化层（batch normalization，BN）。函数接受四个参数：`data_loader`，`model`，`num_iters`和`use_gpu`。
+# `data_loader`是训练数据的数据加载器；
+# `model`是要更新BN统计信息的模型；
+# `num_iters`是计算和更新BN统计信息所需的迭代次数；
+# `use_gpu`是一个布尔标志，指示是否使用GPU来计算和更新BN统计信息。
+# 该函数首先定义了一个内部函数`_gen_loader()`，该函数生成一个新的数据加载器，将数据加载到GPU并返回。
+# 然后，它使用`update_bn_stats()`函数计算和更新BN统计信息，该函数接受三个参数：`model`、`_gen_loader()`和`num_iters`。
+# `update_bn_stats()`函数的作用是计算并更新模型中所有BN层的均值和方差。
+# 该函数的目的是在训练模型之前，通过计算数据集的精确统计信息来更新模型的BN层。这样做可以提高模型的性能和稳定性。
 def calculate_and_update_precise_bn(
         data_loader,
         model, num_iters=200,
@@ -285,8 +293,10 @@ def calculate_and_update_precise_bn(
             if use_gpu:
                 if isinstance(inputs, (list,)):
                     for i in range(len(inputs)):
+                        # cuda(non_blocking=True)将数据异步地传输到GPU内存中，以提高效率。
                         inputs[i] = inputs[i].cuda(non_blocking=True)
                 else:
+                    # cuda(non_blocking=True)将数据异步地传输到GPU内存中，以提高效率。
                     inputs = inputs.cuda(non_blocking=True)
             yield inputs
 

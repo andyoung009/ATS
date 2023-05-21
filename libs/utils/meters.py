@@ -547,6 +547,7 @@ def get_map(preds, labels):
     labels = labels[:, ~(np.all(labels == 0, axis=0))]
     aps = [0]
     try:
+        # average_precision_score()函数用于计算多标签分类模型的平均精度（Average Precision，简称AP）指标。
         aps = average_precision_score(labels, preds, average=None)
     except ValueError:
         print(

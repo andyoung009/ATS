@@ -3,15 +3,19 @@ TRAIN:
 
 
 TEST:
-  ENABLE: True
+  ENABLE: False
   DATASET: ImageNet
   BATCH_SIZE: 1024
-  CHECKPOINT_FILE_PATH: "/home/mohsen/farnoush/VIT/deit_small_patch16_224-cd65a155.pth"
+  # CHECKPOINT_FILE_PATH: "/home/mohsen/farnoush/VIT/deit_small_patch16_224-cd65a155.pth"
+  # changed on 2023.04.17
+  CHECKPOINT_FILE_PATH: "/data/ML_document/ATS/deit_small_patch16_224-cd65a155.pth"
+
   NUM_ENSEMBLE_VIEWS: 1
   NUM_SPATIAL_CROPS: 1
 
 DATA:
-  PATH_TO_DATA_DIR: "/media/datasets/ILSVRC/"
+  # PATH_TO_DATA_DIR: "/media/datasets/ILSVRC/"
+  PATH_TO_DATA_DIR: "/data/ML_document/ImageNet/ILSVRC/Data/CLS-LOC/"
   TEST_CROP_SIZE: 224
   TRAIN_CROP_SIZE: 224
   MEAN: [0.485, 0.456, 0.406]

@@ -160,7 +160,19 @@ def get_model_stats(model, cfg, mode, use_train_input):
     model.train(model_mode)
     return count
 
+# 这是一个记录深度学习模型信息的Python函数。该函数接受三个参数：`model`，`cfg`和`use_train_input`。
+# `model`是要记录信息的深度学习模型。
+# `cfg`是一个配置节点，包含有关模型架构和超参数的信息。
+# `use_train_input`是一个布尔标志，用于确定是记录模型的训练输入（如果设置为`True`）还是测试输入（如果设置为`False`）的信息。
+# 该函数记录以下信息：
+# - `model`：模型的字符串表示形式。
+# - `Params`：模型中的参数数量。
+# - `Mem`：模型使用的GPU内存量。
+# - `Activations`：模型中的激活数量（即每个层的输出值）。
+# - `GFLOPs`：模型执行的GFLOP数量（即浮点运算次数）。
+# - `nvidia-smi`：`nvidia-smi`命令的输出，显示GPU使用情况信息。
 
+# 此函数可用于在训练或测试过程中监视深度学习模型的性能和资源使用情况。
 def log_model_info(model, cfg, use_train_input=True):
     """
     Log info, includes number of parameters, gpu usage  and activation count.
@@ -174,6 +186,8 @@ def log_model_info(model, cfg, use_train_input=True):
     """
     logger.info("Model:\n{}".format(model))
     logger.info("Params: {:,}".format(params_count(model)))
+    # 这行代码使用gpu_mem_usage()函数获取当前GPU的内存使用情况，并将其以逗号分隔的千位数格式化为字符串，然后将其作为信息消息记录在日志中。
+    # 该函数用于在训练或测试过程中监视模型的GPU内存使用情况。
     logger.info("Mem: {:,} MB".format(gpu_mem_usage()))
     logger.info(
         "Activations: {:,} M".format(
@@ -271,6 +285,7 @@ def launch_job(cfg, init_method, func, daemon=False):
             daemonic processes will be created
     """
     if cfg.NUM_GPUS > 1:
+        # 多进程训练模型
         torch.multiprocessing.spawn(
             mpu.run,
             nprocs=cfg.NUM_GPUS,
